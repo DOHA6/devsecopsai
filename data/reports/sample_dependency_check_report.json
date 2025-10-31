@@ -1,0 +1,58 @@
+{
+  "tool": "dependency-check",
+  "category": "SCA",
+  "reportDate": "2025-10-31T10:35:00Z",
+  "projectInfo": {
+    "name": "DevSecOps-AI",
+    "reportDate": "2025-10-31T10:35:00Z",
+    "credits": "OWASP Dependency-Check"
+  },
+  "dependencies": [
+    {
+      "fileName": "requests-2.25.0-py2.py3-none-any.whl",
+      "filePath": "/usr/local/lib/python3.9/site-packages/requests-2.25.0.dist-info",
+      "vulnerabilities": [
+        {
+          "name": "CVE-2023-32681",
+          "severity": "MEDIUM",
+          "cvssv3": {
+            "baseScore": 6.5,
+            "attackVector": "NETWORK",
+            "attackComplexity": "LOW"
+          },
+          "cwe": "CWE-444",
+          "description": "Requests is a HTTP library. Requests allows for header injection due to improper input validation in the HTTP protocol.",
+          "references": [
+            {
+              "source": "NVD",
+              "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-32681"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "fileName": "flask-1.1.2-py2.py3-none-any.whl",
+      "filePath": "/usr/local/lib/python3.9/site-packages/flask-1.1.2.dist-info",
+      "vulnerabilities": [
+        {
+          "name": "CVE-2023-30861",
+          "severity": "HIGH",
+          "cvssv3": {
+            "baseScore": 7.5,
+            "attackVector": "NETWORK",
+            "attackComplexity": "LOW"
+          },
+          "cwe": "CWE-601",
+          "description": "Flask is vulnerable to open redirect attacks due to improper validation of redirect URLs.",
+          "references": [
+            {
+              "source": "NVD",
+              "url": "https://nvd.nist.gov/vuln/detail/CVE-2023-30861"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

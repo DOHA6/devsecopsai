@@ -1,0 +1,59 @@
+{
+  "tool": "bandit",
+  "category": "SAST",
+  "generated_at": "2025-10-31T10:30:00",
+  "metrics": {
+    "_totals": {
+      "loc": 1500,
+      "nosec": 0
+    },
+    "CRITICAL": 2,
+    "HIGH": 5,
+    "MEDIUM": 12,
+    "LOW": 8
+  },
+  "results": [
+    {
+      "test_id": "B201",
+      "test_name": "flask_debug_true",
+      "issue_severity": "HIGH",
+      "issue_confidence": "HIGH",
+      "issue_text": "A Flask app appears to be run with debug=True, which exposes the debugger and allows the execution of arbitrary code.",
+      "filename": "./app/main.py",
+      "line_number": 45,
+      "code": "app.run(debug=True)",
+      "cwe": {
+        "id": 94,
+        "link": "https://cwe.mitre.org/data/definitions/94.html"
+      }
+    },
+    {
+      "test_id": "B605",
+      "test_name": "start_process_with_partial_path",
+      "issue_severity": "HIGH",
+      "issue_confidence": "MEDIUM",
+      "issue_text": "Starting a process with a partial executable path",
+      "filename": "./utils/command.py",
+      "line_number": 23,
+      "code": "subprocess.call(['ls', '-la'])",
+      "cwe": {
+        "id": 78,
+        "link": "https://cwe.mitre.org/data/definitions/78.html"
+      }
+    },
+    {
+      "test_id": "B110",
+      "test_name": "try_except_pass",
+      "issue_severity": "LOW",
+      "issue_confidence": "HIGH",
+      "issue_text": "Try, Except, Pass detected.",
+      "filename": "./handlers/error.py",
+      "line_number": 67,
+      "code": "try:\\n    risky_operation()\\nexcept Exception:\\n    pass",
+      "cwe": {
+        "id": 703,
+        "link": "https://cwe.mitre.org/data/definitions/703.html"
+      }
+    }
+  ]
+}

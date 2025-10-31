@@ -1,0 +1,179 @@
+╔══════════════════════════════════════════════════════════════════╗
+║          🎯 DASHBOARD DEMO - Quick Start Guide                   ║
+╚══════════════════════════════════════════════════════════════════╝
+
+Your DevSecOps AI Dashboard is now ready! Here's how to use it:
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 1: START THE DASHBOARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Run this command:
+
+    ./start_dashboard.sh
+
+Or manually:
+
+    cd dashboard
+    python app.py
+
+The dashboard will start at: http://localhost:5000
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 2: VIEW YOUR DATA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The dashboard will show:
+
+✓ We already have scan data from earlier!
+  - 6 vulnerabilities found in sample_app
+  - 2 HIGH, 2 MEDIUM, 2 LOW severity
+
+Open your browser to see:
+
+  📊 Real-time vulnerability counts
+  📈 Interactive severity charts
+  🔍 Detailed vulnerability list
+  📄 Policy generation status
+  📊 Historical trends
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 3: GENERATE MORE DATA (Optional)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+While the dashboard is running (in another terminal):
+
+# Run another scan
+python main.py scan --target ./sample_app
+
+# Generate policies (requires API key or Ollama)
+python main.py generate --input ./data/reports
+
+# The dashboard will auto-update every 30 seconds!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ WHAT YOU'LL SEE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+┌─────────────────────────────────────────────────────────────┐
+│ 🛡️ DevSecOps AI Dashboard                                   │
+│                                                              │
+│ Status: ✓ Scans completed                                   │
+│                                                              │
+│ ┌───────────┐  ┌───────────┐  ┌───────────┐                │
+│ │ Scan ✓    │→ │ Generate  │→ │ Evaluate  │                │
+│ └───────────┘  └───────────┘  └───────────┘                │
+│                                                              │
+│ VULNERABILITIES FOUND:                                      │
+│                                                              │
+│  🔴 Critical: 0     🟡 Medium: 2                            │
+│  🟠 High: 2         🔵 Low: 2                                │
+│                                                              │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+│                                                              │
+│ 📊 SEVERITY DISTRIBUTION        📈 QUALITY METRICS          │
+│     [Interactive Pie Chart]         [Radar Chart]           │
+│                                                              │
+│ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ │
+│                                                              │
+│ 🔍 RECENT VULNERABILITIES:                                  │
+│                                                              │
+│ • SQL Injection (HIGH)                                      │
+│   Location: sample_app/app.py:45                            │
+│   CWE-89: Improper Neutralization                           │
+│                                                              │
+│ • Hardcoded Password (HIGH)                                 │
+│   Location: sample_app/app.py:12                            │
+│   CWE-798: Use of Hard-coded Credentials                    │
+│                                                              │
+│ • Debug Mode Enabled (MEDIUM)                               │
+│   Location: sample_app/app.py:98                            │
+│   CWE-489: Active Debug Code                                │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ FEATURES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Auto-refresh every 30 seconds
+✓ Interactive charts (Click to filter!)
+✓ Responsive design (works on mobile)
+✓ REST API for integrations
+✓ Historical trend analysis
+✓ Real-time pipeline monitoring
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ USE CASES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. DEVELOPMENT: Keep dashboard open while coding
+   - Instant feedback on security issues
+   - Watch metrics improve as you fix issues
+
+2. CI/CD MONITORING: Display on team screen
+   - Real-time pipeline status
+   - Team visibility of security posture
+
+3. PRESENTATIONS: Show to stakeholders
+   - Professional visualizations
+   - Clear metrics and trends
+
+4. AUDITS: Export data for compliance
+   - Historical vulnerability tracking
+   - Policy generation status
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ API ENDPOINTS (for automation)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+curl http://localhost:5000/api/status
+curl http://localhost:5000/api/vulnerabilities
+curl http://localhost:5000/api/metrics
+curl http://localhost:5000/api/policies
+curl http://localhost:5000/api/history
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ INTEGRATION EXAMPLES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+# Slack notification on critical vulnerabilities
+curl http://localhost:5000/api/vulnerabilities | \
+  jq '.severity_counts.CRITICAL' | \
+  xargs -I {} curl -X POST -H 'Content-type: application/json' \
+  --data '{"text":"🚨 {} critical vulnerabilities found!"}' \
+  YOUR_SLACK_WEBHOOK
+
+# Daily email report
+curl http://localhost:5000/api/status | \
+  mail -s "Daily Security Report" team@company.com
+
+# Jenkins build status
+CRITICAL=$(curl -s http://localhost:5000/api/vulnerabilities | \
+           jq '.severity_counts.CRITICAL')
+if [ "$CRITICAL" -gt 0 ]; then
+  exit 1  # Fail the build
+fi
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+READY TO START?
+
+Run:  ./start_dashboard.sh
+
+Then open: http://localhost:5000 in your browser
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+TIP: You can run the dashboard in the background while working on code!
+
+     # Terminal 1: Start dashboard
+     ./start_dashboard.sh
+
+     # Terminal 2: Continue development
+     python main.py scan --target ./my-app
+     python main.py generate --input ./data/reports
+
+     # Dashboard updates automatically! 🎉
+
+╚══════════════════════════════════════════════════════════════════╝

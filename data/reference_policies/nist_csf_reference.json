@@ -1,0 +1,5 @@
+{
+  "framework": "NIST_CSF",
+  "version": "1.0",
+  "content": "# Security Policy - NIST Cybersecurity Framework\n\n**Framework:** NIST CSF v1.1\n\n## Executive Summary\n\nThis security policy establishes comprehensive security controls and practices aligned with the NIST Cybersecurity Framework.\n\n## 1. Identify (ID)\n\n### 1.1 Asset Management (ID.AM)\n- Maintain accurate inventory of software assets\n- Implement automated dependency scanning\n\n### 1.2 Risk Assessment (ID.RA)\n- Conduct vulnerability assessments monthly\n- Document risk treatment decisions\n\n## 2. Protect (PR)\n\n### 2.1 Access Control (PR.AC)\n- Disable debug mode in production\n- Implement least privilege\n\n### 2.2 Data Security (PR.DS)\n- Encrypt sensitive data\n- Implement input validation\n\n## 3. Detect (DE)\n\n### 3.1 Continuous Monitoring (DE.CM)\n- Implement automated security scanning\n- Monitor application logs\n\n## 4. Respond (RS)\n\n### 4.1 Incident Response (RS.RP)\n- Document incident response procedures\n- Update vulnerabilities within SLA\n\n## 5. Recover (RC)\n\n### 5.1 Recovery Planning (RC.RP)\n- Maintain backup procedures\n- Test recovery quarterly"
+}
