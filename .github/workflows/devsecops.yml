@@ -10,7 +10,7 @@ on:
 
 env:
   JAVA_VERSION: '17'
-  NODE_VERSION: '16'
+  NODE_VERSION: '14'
   PYTHON_VERSION: '3.9'
 
 jobs:
@@ -136,10 +136,11 @@ jobs:
 
       - name: Build React Frontend
         working-directory: sample_app_java/frontend
+        env:
+          CI: false
         run: |
-          unset NODE_OPTIONS
           npm ci
-          NODE_OPTIONS=--openssl-legacy-provider CI=false npm run build
+          npm run build
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
