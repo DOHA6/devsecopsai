@@ -21,7 +21,7 @@
 ### Prerequisites
 
 - **Python 3.9+** - For the main application
-- **Java 17** - For the Spring Boot sample application
+- **Java 11** - For the Spring Boot sample application
 - **Node.js 14** - For the React frontend (sample app)
 - **Ollama** - For local LLM inference
 - **Maven** - For building Java projects
@@ -158,7 +158,7 @@ devsecopsai/
 ├── requirements.txt             # Python dependencies
 │
 ├── sample_app_java/             # ⭐ Spring Boot + React Sample
-│   ├── backend/                 # Java 17, Spring Boot 2.7.5
+│   ├── backend/                 # Java 11, Spring Boot 2.7.5
 │   │   ├── pom.xml
 │   │   └── src/main/java/      # Vulnerable Java code
 │   └── frontend/                # React 17, Node 14
@@ -209,7 +209,7 @@ devsecopsai/
 
 **Purpose:** Intentionally vulnerable application for testing
 
-**Backend (Java 17, Spring Boot 2.7.5):**
+**Backend (Java 11, Spring Boot 2.7.5):**
 - Port: `8080`
 - Vulnerabilities: SQL Injection, Path Traversal, Insecure Deserialization
 - Database: H2 (in-memory)
@@ -508,7 +508,7 @@ ollama pull qwen2.5:1.5b
 
 ```bash
 # Check Java version
-java -version  # Should be 17
+java -version  # Should be 11
 
 # Clean and rebuild
 cd sample_app_java/backend
