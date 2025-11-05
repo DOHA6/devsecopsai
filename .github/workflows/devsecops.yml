@@ -177,12 +177,13 @@ jobs:
           sleep 30
 
       - name: Run OWASP ZAP Scan
-        uses: zaproxy/action-baseline@v0.7.0
+        uses: zaproxy/action-baseline@v0.12.0
         continue-on-error: true
         with:
+          docker: 'ghcr.io/zaproxy/zaproxy:stable'
           target: 'http://localhost:8080'
           rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-a -j -r zap_report.html -J zap_report.json'
+          cmd_options: '-a -j'
 
       - name: Upload DAST Reports
         uses: actions/upload-artifact@v4
@@ -223,7 +224,7 @@ jobs:
         env:
           OLLAMA_HOST: ${{ secrets.OLLAMA_HOST || 'http://localhost:11434' }}
         run: |
-          python main.py generate --reports data/reports --output output/generated_policies
+          python main.py generate --input data/reports --output output/generated_policies
 
       - name: Upload Generated Policies
         uses: actions/upload-artifact@v4
