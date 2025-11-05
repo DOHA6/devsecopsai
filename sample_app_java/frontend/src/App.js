@@ -130,6 +130,11 @@ function App() {
           <p>Result: {calculateExpression('2 + 2')}</p>
           <button onClick={saveCredentials}>Save Credentials</button>
         </section>
+
+        <section className="feature-section">
+          <h2>HTML Renderer (XSS Test)</h2>
+          {renderHTML('<p>This HTML is <strong>rendered unsafely</strong> - XSS risk!</p>')}
+        </section>
       </main>
 
       <footer>

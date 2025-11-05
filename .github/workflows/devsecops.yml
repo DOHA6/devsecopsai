@@ -136,6 +136,9 @@ jobs:
 
       - name: Build React Frontend
         working-directory: sample_app_java/frontend
+        env:
+          CI: false  # Don't treat warnings as errors
+          NODE_OPTIONS: --openssl-legacy-provider  # Fix for Node 17+
         run: |
           npm ci
           npm run build
