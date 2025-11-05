@@ -1,0 +1,19 @@
+# Core Dependencies (Minimal - ~50MB total)
+python-dotenv==1.0.0
+pyyaml==6.0.1
+requests>=2.31.0
+jinja2>=3.1.2
+click==8.1.7
+loguru==0.7.2
+flask>=3.0.0
+
+# LLM Integration (Ollama only - ~1MB)
+ollama>=0.6.0
+
+# Security Scanners (install separately when needed)
+# bandit>=1.7.5
+# safety>=2.3.5
+
+# Testing (minimal)
+pytest>=7.4.3
+pytest-mock>=3.12.0

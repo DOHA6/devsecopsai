@@ -18,7 +18,6 @@ class ReportParser:
     def __init__(self):
         self.parsers = {
             'bandit': self._parse_bandit,
-            'sonarqube': self._parse_sonarqube,
             'dependency_check': self._parse_dependency_check,
             'safety': self._parse_safety,
             'zap': self._parse_zap
@@ -72,8 +71,6 @@ class ReportParser:
         
         if 'bandit' in name:
             return 'bandit'
-        elif 'sonarqube' in name or 'sonar' in name:
-            return 'sonarqube'
         elif 'dependency' in name or 'owasp' in name:
             return 'dependency_check'
         elif 'safety' in name:
@@ -109,33 +106,6 @@ class ReportParser:
             'category': 'SAST',
             'timestamp': data.get('generated_at'),
             'metrics': data.get('metrics'),
-            'vulnerabilities': vulnerabilities
-        }
-    
-    def _parse_sonarqube(self, file_path: Path) -> Dict:
-        """Parse SonarQube JSON report"""
-        with open(file_path, 'r') as f:
-            data = json.load(f)
-        
-        vulnerabilities = []
-        for issue in data.get('issues', []):
-            vulnerabilities.append({
-                'id': issue.get('key'),
-                'title': issue.get('rule'),
-                'description': issue.get('message'),
-                'severity': issue.get('severity'),
-                'type': issue.get('type'),
-                'file': issue.get('component'),
-                'line': issue.get('line'),
-                'status': issue.get('status'),
-                'tool': 'sonarqube',
-                'category': 'SAST'
-            })
-        
-        return {
-            'tool': 'sonarqube',
-            'category': 'SAST',
-            'total_issues': data.get('total'),
             'vulnerabilities': vulnerabilities
         }
     

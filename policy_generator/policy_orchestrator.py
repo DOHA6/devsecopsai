@@ -1,6 +1,7 @@
 """
 Policy Generator Orchestrator
 Coordinates policy generation from vulnerability reports using LLMs
+Optimized for speed with parallel processing
 """
 
 import json
@@ -8,6 +9,8 @@ from pathlib import Path
 from typing import Dict, List, Optional
 from loguru import logger
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import os
 
 from llm_engine.llm_manager import LLMManager
 from llm_engine.prompt_engine import PromptEngine
@@ -20,19 +23,23 @@ class PolicyOrchestrator:
         self, 
         framework: str = "NIST_CSF",
         output_dir: str = "./output/generated_policies",
-        model_override: Optional[str] = None
+        model_override: Optional[str] = None,
+        max_workers: Optional[int] = None
     ):
         self.framework = framework
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         
         # Initialize LLM and prompt engines
-        self.llm_manager = LLMManager(model=model_override)
+        self.llm_manager = LLMManager(model=model_override, use_cache=True)
         self.prompt_engine = PromptEngine(framework=framework)
+        
+        # Parallel processing configuration
+        self.max_workers = max_workers or int(os.getenv('MAX_PARALLEL_POLICIES', '3'))
     
     def generate_policies(self, vulnerability_reports: List[Dict]) -> List[Path]:
         """
-        Generate security policies from vulnerability reports
+        Generate security policies from vulnerability reports in parallel
         
         Args:
             vulnerability_reports: List of parsed vulnerability reports
@@ -51,37 +58,56 @@ class PolicyOrchestrator:
             logger.warning("No vulnerabilities found in reports")
             return generated_files
         
-        logger.info(f"Generating policies for {len(all_vulnerabilities)} vulnerabilities")
+        logger.info(f"Generating policies for {len(all_vulnerabilities)} vulnerabilities (parallel mode)")
         
-        # Generate main policy
+        # Generate main policy (always first)
         policy_file = self._generate_main_policy(all_vulnerabilities)
         if policy_file:
             generated_files.append(policy_file)
         
-        # Generate category-specific policies
+        # Generate category-specific policies in parallel
         by_category = self._group_by_category(all_vulnerabilities)
-        for category, vulns in by_category.items():
-            if vulns:
-                policy_file = self._generate_category_policy(category, vulns)
-                if policy_file:
-                    generated_files.append(policy_file)
+        
+        if by_category and self.max_workers > 1:
+            # Parallel generation for categories
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                future_to_category = {
+                    executor.submit(self._generate_category_policy, category, vulns): category
+                    for category, vulns in by_category.items() if vulns
+                }
+                
+                for future in as_completed(future_to_category):
+                    category = future_to_category[future]
+                    try:
+                        policy_file = future.result()
+                        if policy_file:
+                            generated_files.append(policy_file)
+                    except Exception as e:
+                        logger.error(f"Failed to generate policy for {category}: {e}")
+        else:
+            # Sequential fallback
+            for category, vulns in by_category.items():
+                if vulns:
+                    policy_file = self._generate_category_policy(category, vulns)
+                    if policy_file:
+                        generated_files.append(policy_file)
         
         return generated_files
     
     def _generate_main_policy(self, vulnerabilities: List[Dict]) -> Optional[Path]:
-        """Generate comprehensive main policy"""
+        """Generate comprehensive main policy - optimized"""
         logger.info("Generating main security policy...")
         
         try:
             # Create prompt
             prompt = self.prompt_engine.generate_policy_prompt(vulnerabilities)
             
-            # Generate policy using LLM
+            # Generate policy using LLM with optimized settings
             logger.info("Calling LLM for policy generation...")
             policy_content = self.llm_manager.generate_with_retry(
                 prompt,
                 temperature=0.3,
-                max_tokens=3000
+                max_tokens=512  # Reduced for speed
             )
             
             # Create policy document
@@ -121,19 +147,19 @@ class PolicyOrchestrator:
             return None
     
     def _generate_category_policy(self, category: str, vulnerabilities: List[Dict]) -> Optional[Path]:
-        """Generate policy for specific vulnerability category"""
+        """Generate policy for specific vulnerability category - optimized"""
         logger.info(f"Generating policy for {category} category...")
         
         try:
             # Create focused prompt
             prompt = self.prompt_engine.generate_policy_prompt(vulnerabilities)
-            prompt += f"\n\nFocus specifically on {category} security controls and best practices."
+            prompt += f"\n\nFocus on {category} controls."
             
-            # Generate policy
+            # Generate policy with optimized settings
             policy_content = self.llm_manager.generate_with_retry(
                 prompt,
                 temperature=0.3,
-                max_tokens=2000
+                max_tokens=400  # Reduced for speed
             )
             
             # Create policy document
@@ -163,7 +189,7 @@ class PolicyOrchestrator:
             return None
     
     def refine_policy(self, policy_file: Path, vulnerabilities: List[Dict]) -> Optional[Path]:
-        """Refine and improve an existing policy"""
+        """Refine and improve an existing policy - optimized"""
         logger.info(f"Refining policy: {policy_file}")
         
         try:
@@ -176,11 +202,11 @@ class PolicyOrchestrator:
             # Create refinement prompt
             prompt = self.prompt_engine.generate_refinement_prompt(draft_content, vulnerabilities)
             
-            # Generate refined policy
+            # Generate refined policy with optimized settings
             refined_content = self.llm_manager.generate_with_retry(
                 prompt,
                 temperature=0.2,
-                max_tokens=3000
+                max_tokens=400  # Reduced for speed
             )
             
             # Update policy document

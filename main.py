@@ -243,8 +243,9 @@ def check_config():
     
     # Check security tool configuration
     click.echo(f"\nSecurity Tools:")
-    click.echo(f"SonarQube URL: {os.getenv('SONARQUBE_URL') or '❌ Not set'}")
+    click.echo(f"Bandit: ✅ Built-in (no config needed)")
     click.echo(f"ZAP Proxy: {os.getenv('ZAP_PROXY_ADDRESS') or '❌ Not set'}")
+    click.echo(f"ZAP API Key: {'✅ Set' if os.getenv('ZAP_API_KEY') else '❌ Not set'}")
     
     # Check directories
     click.echo(f"\nDirectories:")

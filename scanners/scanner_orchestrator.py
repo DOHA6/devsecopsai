@@ -10,7 +10,6 @@ from typing import Dict, List
 from loguru import logger
 
 from .sast.bandit_scanner import BanditScanner
-from .sast.sonarqube_scanner import SonarQubeScanner
 from .sca.dependency_check_scanner import DependencyCheckScanner
 from .sca.safety_scanner import SafetyScanner
 from .dast.zap_scanner import ZAPScanner
@@ -26,8 +25,7 @@ class ScannerOrchestrator:
         # Initialize scanners
         self.scanners = {
             'sast': {
-                'bandit': BanditScanner(self.output_dir),
-                'sonarqube': SonarQubeScanner(self.output_dir)
+                'bandit': BanditScanner(self.output_dir)
             },
             'sca': {
                 'dependency_check': DependencyCheckScanner(self.output_dir),

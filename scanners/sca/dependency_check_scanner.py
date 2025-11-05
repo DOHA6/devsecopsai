@@ -59,6 +59,12 @@ class DependencyCheckScanner:
                     '--project', 'DevSecOps-AI'
                 ], check=True)
             
+            # Rename the report file to match expected naming pattern
+            default_report = self.output_dir / "dependency-check-report.json"
+            if default_report.exists() and default_report != report_path:
+                import shutil
+                shutil.copy(default_report, report_path)
+            
             logger.info(f"Dependency-Check scan completed: {report_path}")
             return report_path
             

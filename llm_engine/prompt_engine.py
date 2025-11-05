@@ -44,24 +44,20 @@ class PromptEngine:
         )
     
     def generate_refinement_prompt(self, draft_policy: str, vulnerabilities: List[Dict]) -> str:
-        """Generate prompt for refining/validating a policy"""
+        """Generate prompt for refining/validating a policy - Optimized"""
         template = Template("""
-You are a cybersecurity compliance expert. Review and refine the following security policy.
+Refine this {{ framework }} security policy:
 
-Original Vulnerabilities Found:
-{{ summary }}
-
-Draft Policy:
 {{ draft_policy }}
 
-Task: Refine this policy to:
-1. Ensure all critical vulnerabilities are addressed
-2. Align with {{ framework }} requirements
-3. Use clear, professional language
-4. Include specific remediation guidance
-5. Ensure completeness and accuracy
+Issues: {{ summary }}
 
-Provide the refined policy in a structured format.
+Make it:
+1. Cover critical vulnerabilities
+2. {{ framework }}-compliant
+3. Clear and actionable
+
+Be concise.
 """)
         
         vuln_summary = self._summarize_vulnerabilities(vulnerabilities)
@@ -110,123 +106,66 @@ Provide the refined policy in a structured format.
         return summary
     
     def _get_nist_template(self) -> Template:
-        """NIST Cybersecurity Framework prompt template"""
+        """NIST Cybersecurity Framework prompt template - Optimized for speed"""
         return Template("""
-You are an expert in cybersecurity policy writing and the NIST Cybersecurity Framework (CSF).
+Generate a NIST CSF security policy for these vulnerabilities.
 
-Context:
-A security assessment has identified vulnerabilities in a software system. Your task is to generate a comprehensive security policy document that addresses these findings while aligning with NIST CSF.
+Summary: {{ summary }}
 
-Vulnerability Summary:
-{{ summary }}
-
-Detailed Vulnerabilities:
-{% for vuln in vulnerabilities[:20] %}
-- ID: {{ vuln.id }}
-  Title: {{ vuln.title }}
-  Severity: {{ vuln.severity }}
-  Description: {{ vuln.description }}
-  Category: {{ vuln.category }}
+Top Issues:
+{% for vuln in vulnerabilities[:10] %}
+- [{{ vuln.severity }}] {{ vuln.title }}
 {% endfor %}
 
-Task:
-Generate a structured security policy document that:
+Include:
+1. Risk Assessment (Identify)
+2. Security Controls (Protect/Detect)
+3. Response Plan (Respond/Recover)
+4. Remediation Steps
 
-1. **Identifies** the risks and vulnerabilities (NIST: Identify function)
-2. **Protects** systems through security controls (NIST: Protect function)
-3. **Detects** security events and anomalies (NIST: Detect function)
-4. **Responds** to identified security incidents (NIST: Respond function)
-5. **Recovers** from security incidents (NIST: Recover function)
-
-Format the policy with:
-- Executive Summary
-- Risk Assessment
-- Security Controls (mapped to NIST CSF)
-- Remediation Recommendations
-- Implementation Timeline
-- Monitoring and Review Procedures
-
-Use professional, clear language suitable for both technical and non-technical stakeholders.
+Be concise and actionable.
 """)
     
     def _get_iso_template(self) -> Template:
-        """ISO/IEC 27001 prompt template"""
+        """ISO/IEC 27001 prompt template - Optimized for speed"""
         return Template("""
-You are an expert in information security management and ISO/IEC 27001:2022.
+Generate an ISO 27001 security policy.
 
-Context:
-A security assessment has identified vulnerabilities in an information system. Generate a security policy that addresses these issues in accordance with ISO 27001 requirements.
+Summary: {{ summary }}
 
-Vulnerability Summary:
-{{ summary }}
-
-Detailed Vulnerabilities:
-{% for vuln in vulnerabilities[:20] %}
-- ID: {{ vuln.id }}
-  Title: {{ vuln.title }}
-  Severity: {{ vuln.severity }}
-  Description: {{ vuln.description }}
-  Category: {{ vuln.category }}
+Top Issues:
+{% for vuln in vulnerabilities[:10] %}
+- [{{ vuln.severity }}] {{ vuln.title }}
 {% endfor %}
 
-Task:
-Generate an ISO 27001-compliant security policy that includes:
+Include:
+1. Scope & Risk Assessment
+2. Annex A Controls (A.5-A.8)
+3. Implementation Plan
+4. Monitoring
 
-1. **Scope and Objectives** (Clause 4)
-2. **Information Security Policy** (Clause 5)
-3. **Risk Assessment** (Clause 6)
-4. **Security Controls** mapped to Annex A controls:
-   - A.5: Organizational controls
-   - A.6: People controls
-   - A.7: Physical controls
-   - A.8: Technological controls
-5. **Implementation Plan**
-6. **Monitoring and Measurement** (Clause 9)
-7. **Continual Improvement** (Clause 10)
-
-Format the policy professionally with clear structure, objectives, and actionable controls.
+Be concise.
 """)
     
     def _get_cis_template(self) -> Template:
-        """CIS Controls prompt template"""
+        """CIS Controls prompt template - Optimized for speed"""
         return Template("""
-You are an expert in cybersecurity best practices and CIS Critical Security Controls.
+Generate a CIS Controls v8 security policy.
 
-Context:
-Security vulnerabilities have been identified. Generate a policy document that addresses these using CIS Controls framework.
+Summary: {{ summary }}
 
-Vulnerability Summary:
-{{ summary }}
-
-Detailed Vulnerabilities:
-{% for vuln in vulnerabilities[:20] %}
-- ID: {{ vuln.id }}
-  Title: {{ vuln.title }}
-  Severity: {{ vuln.severity }}
-  Description: {{ vuln.description }}
-  Category: {{ vuln.category }}
+Top Issues:
+{% for vuln in vulnerabilities[:10] %}
+- [{{ vuln.severity }}] {{ vuln.title }}
 {% endfor %}
 
-Task:
-Generate a security policy mapped to relevant CIS Controls v8:
+Map to CIS Controls (1-8, 16):
+1. Asset Management
+2. Software Control
+3. Data Protection
+4. Secure Configuration
+5. Access Control
+6. Vulnerability Management
 
-Focus on applicable controls such as:
-- CIS Control 1: Inventory and Control of Enterprise Assets
-- CIS Control 2: Inventory and Control of Software Assets
-- CIS Control 3: Data Protection
-- CIS Control 4: Secure Configuration
-- CIS Control 5: Account Management
-- CIS Control 6: Access Control Management
-- CIS Control 7: Continuous Vulnerability Management
-- CIS Control 8: Audit Log Management
-- CIS Control 16: Application Software Security
-
-Provide:
-1. Policy Overview
-2. Identified Risks
-3. Security Controls (mapped to specific CIS Controls)
-4. Implementation Guidance
-5. Verification and Validation Methods
-
-Use clear, actionable language appropriate for IT security teams.
+Include implementation guidance. Be concise.
 """)
