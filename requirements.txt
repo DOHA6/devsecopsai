@@ -20,6 +20,8 @@ rouge-score==0.1.2
 pandas==2.2.0
 numpy==1.26.3
 jsonschema==4.21.1
+beautifulsoup4==4.12.2
+lxml==5.1.0
 
 # CLI and logging
 click==8.1.7
