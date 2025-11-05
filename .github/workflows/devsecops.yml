@@ -222,7 +222,9 @@ jobs:
 
       - name: Generate Security Policies with AI
         env:
+          LLM_PROVIDER: ollama
           OLLAMA_HOST: ${{ secrets.OLLAMA_HOST || 'http://localhost:11434' }}
+          LLM_MODEL: qwen2.5:1.5b
         run: |
           python main.py generate --input data/reports --output output/generated_policies
 
