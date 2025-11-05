@@ -137,8 +137,9 @@ jobs:
       - name: Build React Frontend
         working-directory: sample_app_java/frontend
         run: |
+          unset NODE_OPTIONS
           npm ci
-          CI=false NODE_OPTIONS=--openssl-legacy-provider npm run build
+          NODE_OPTIONS=--openssl-legacy-provider CI=false npm run build
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
