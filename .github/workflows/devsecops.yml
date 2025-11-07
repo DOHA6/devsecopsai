@@ -237,13 +237,18 @@ jobs:
 
       - name: Generate Dashboard Report
         run: |
-          python scripts/generate_final_report.py
+          python scripts/generate_final_report.py \
+            --evaluation output/evaluation_results \
+            --policies output/generated_policies \
+            --output output/FINAL_REPORT
 
       - name: Upload Dashboard
         uses: actions/upload-artifact@v4
         with:
           name: dashboard
-          path: output/POLICY_GENERATION_REPORT.md
+          path: |
+            output/FINAL_REPORT.md
+            output/FINAL_REPORT
 
   # Security Gate - Fail if critical issues found
   security-gate:
