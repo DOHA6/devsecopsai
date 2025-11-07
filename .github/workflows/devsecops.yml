@@ -225,8 +225,19 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: '*-reports'
-          path: data/reports
           merge-multiple: true
+          
+      - name: Organize Reports
+        run: |
+          echo "📁 Organizing downloaded reports..."
+          mkdir -p data/reports
+          # Move all JSON/HTML files to data/reports/
+          find . -name "*.json" -o -name "*.html" | while read file; do
+            if [[ "$file" != "./data/reports/"* ]]; then
+              echo "Moving: $file"
+              cp "$file" data/reports/ 2>/dev/null || true
+            fi
+          done
 
       - name: List Downloaded Reports
         run: |
