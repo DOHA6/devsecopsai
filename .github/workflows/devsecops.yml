@@ -61,6 +61,7 @@ jobs:
         with:
           name: sast-reports
           path: data/reports/
+          retention-days: 7  # Keep for 7 days only (raw data)
 
   # SCA - Software Composition Analysis
   sca-scan:
@@ -115,6 +116,7 @@ jobs:
         with:
           name: sca-reports
           path: data/reports/
+          retention-days: 7  # Keep for 7 days only (raw data)
 
   # Build and Test
   build:
@@ -200,6 +202,7 @@ jobs:
           path: |
             zap_report.html
             zap_report.json
+          retention-days: 7  # Keep for 7 days only (raw data)
 
   # AI-Powered Policy Generation
   generate-policies:
@@ -313,6 +316,7 @@ jobs:
         with:
           name: security-policies
           path: output/generated_policies/
+          retention-days: 7  # Keep for 7 days only (included in final report)
 
       - name: Evaluate Generated Policies
         run: |
@@ -321,20 +325,30 @@ jobs:
             --reference data/reference_policies \
             --output output/evaluation_results
 
-      - name: Generate Dashboard Report
+      - name: Upload Evaluation Results
+        uses: actions/upload-artifact@v4
+        with:
+          name: evaluation-results
+          path: output/evaluation_results/
+          retention-days: 7  # Keep for 7 days only (included in final report)
+
+      - name: Generate Consolidated Final Report
         run: |
+          echo "📊 Generating consolidated report with all scan results..."
           python scripts/generate_final_report.py \
             --evaluation output/evaluation_results \
             --policies output/generated_policies \
-            --output output/FINAL_REPORT
+            --output output/CONSOLIDATED_SECURITY_REPORT
+          
+          echo "✅ Final report generated:"
+          ls -lh output/CONSOLIDATED_SECURITY_REPORT.md
 
-      - name: Upload Dashboard
+      - name: Upload Final Consolidated Report (⭐ DOWNLOAD THIS!)
         uses: actions/upload-artifact@v4
         with:
-          name: dashboard
-          path: |
-            output/FINAL_REPORT.md
-            output/FINAL_REPORT
+          name: 📊-FINAL-SECURITY-REPORT-📊
+          path: output/CONSOLIDATED_SECURITY_REPORT.md
+          retention-days: 90  # Keep for 90 days - this is the main report!
 
   # Security Gate - Fail if critical issues found
   security-gate:
