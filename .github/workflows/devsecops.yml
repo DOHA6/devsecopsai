@@ -235,6 +235,13 @@ jobs:
           name: security-policies
           path: output/generated_policies/
 
+      - name: Evaluate Generated Policies
+        run: |
+          python main.py evaluate \
+            --policies output/generated_policies \
+            --reference data/reference_policies \
+            --output output/evaluation_results
+
       - name: Generate Dashboard Report
         run: |
           python scripts/generate_final_report.py \
