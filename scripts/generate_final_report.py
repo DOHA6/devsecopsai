@@ -35,8 +35,11 @@ def generate_report(evaluation_dir: str, policies_dir: str, output_file: str):
         with open(policy_file, 'r') as f:
             policies.append(json.load(f))
     
+    # Load scan reports
+    scan_reports = load_scan_reports()
+    
     # Generate Markdown report
-    report_md = generate_markdown_report(evaluation, policies)
+    report_md = generate_markdown_report(evaluation, policies, scan_reports)
     
     # Save Markdown
     md_file = output_file.with_suffix('.md')
@@ -55,10 +58,71 @@ def generate_report(evaluation_dir: str, policies_dir: str, output_file: str):
         print("   Install with: pip install fpdf2")
 
 
-def generate_markdown_report(evaluation: dict, policies: list) -> str:
+def load_scan_reports() -> dict:
+    """Load all scan reports from data/reports"""
+    reports = {
+        'sast': [],
+        'sca': [],
+        'dast': []
+    }
+    
+    reports_dir = Path('data/reports')
+    if not reports_dir.exists():
+        print("⚠️  No reports directory found")
+        return reports
+    
+    # Load Bandit (SAST) reports
+    for bandit_file in reports_dir.glob('*bandit*.json'):
+        try:
+            with open(bandit_file, 'r') as f:
+                data = json.load(f)
+                reports['sast'].append({
+                    'tool': 'Bandit',
+                    'file': bandit_file.name,
+                    'data': data
+                })
+        except Exception as e:
+            print(f"⚠️  Error loading {bandit_file}: {e}")
+    
+    # Load Dependency-Check (SCA) reports
+    for dep_file in reports_dir.glob('*dependency*.json'):
+        try:
+            with open(dep_file, 'r') as f:
+                data = json.load(f)
+                reports['sca'].append({
+                    'tool': 'OWASP Dependency-Check',
+                    'file': dep_file.name,
+                    'data': data
+                })
+        except Exception as e:
+            print(f"⚠️  Error loading {dep_file}: {e}")
+    
+    # Load ZAP (DAST) reports
+    for zap_file in reports_dir.glob('*zap*.json'):
+        try:
+            with open(zap_file, 'r') as f:
+                data = json.load(f)
+                reports['dast'].append({
+                    'tool': 'OWASP ZAP',
+                    'file': zap_file.name,
+                    'data': data
+                })
+        except Exception as e:
+            print(f"⚠️  Error loading {zap_file}: {e}")
+    
+    return reports
+
+
+def generate_markdown_report(evaluation: dict, policies: list, scan_reports: dict) -> str:
     """Generate Markdown report content"""
     
-    report = f"""# DevSecOps AI - Final Project Report
+    # Calculate scan statistics
+    sast_count = sum(len(r.get('data', {}).get('results', [])) for r in scan_reports.get('sast', []))
+    sca_count = sum(len(r.get('data', {}).get('dependencies', [])) for r in scan_reports.get('sca', []))
+    dast_count = sum(len(r.get('data', {}).get('site', [{}])[0].get('alerts', [])) for r in scan_reports.get('dast', []))
+    total_vulns = sast_count + sca_count + dast_count
+    
+    report = f"""# DevSecOps AI - Consolidated Security Report
 
 **Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 
@@ -66,27 +130,175 @@ def generate_markdown_report(evaluation: dict, policies: list) -> str:
 
 ## Executive Summary
 
-This report presents the results of an AI-driven security policy generation system that transforms technical vulnerability reports into human-readable security policies aligned with international standards.
+This report presents comprehensive security analysis results including vulnerability scans (SAST, SCA, DAST) and AI-generated security policies aligned with international standards.
 
-### Key Achievements
+### Key Metrics
 
+- **Total Vulnerabilities Found:** {total_vulns}
+  - SAST (Code Analysis): {sast_count}
+  - SCA (Dependencies): {sca_count}
+  - DAST (Runtime): {dast_count}
 - **Policies Generated:** {len(policies)}
-- **Vulnerabilities Addressed:** {evaluation.get('generated_count', 0)}
 - **Frameworks Covered:** NIST CSF, ISO 27001, CIS Controls
 
 ---
 
-## 1. Introduction & Context
+## 1. Security Scan Results
 
-### 1.1 Problem Statement
+### 1.1 Static Application Security Testing (SAST)
+
+"""
+    
+    # Add SAST results
+    for sast_report in scan_reports.get('sast', []):
+        tool = sast_report.get('tool', 'Unknown')
+        data = sast_report.get('data', {})
+        results = data.get('results', [])
+        
+        report += f"""
+#### {tool} Results
+
+- **Total Issues:** {len(results)}
+- **Report File:** `{sast_report.get('file', 'N/A')}`
+
+"""
+        if results:
+            # Group by severity
+            severity_counts = {}
+            for result in results:
+                severity = result.get('issue_severity', 'UNKNOWN')
+                severity_counts[severity] = severity_counts.get(severity, 0) + 1
+            
+            report += "**Issues by Severity:**\n\n"
+            for severity in ['HIGH', 'MEDIUM', 'LOW', 'INFO']:
+                count = severity_counts.get(severity, 0)
+                if count > 0:
+                    report += f"- 🔴 **{severity}:** {count} issues\n"
+            
+            report += "\n**Top Issues:**\n\n"
+            for i, result in enumerate(results[:5], 1):
+                issue_text = result.get('issue_text', 'N/A')
+                severity = result.get('issue_severity', 'UNKNOWN')
+                filename = result.get('filename', 'N/A')
+                line = result.get('line_number', 'N/A')
+                report += f"{i}. **[{severity}]** {issue_text}\n"
+                report += f"   - File: `{filename}:{line}`\n"
+                report += f"   - CWE: {result.get('issue_cwe', {}).get('id', 'N/A')}\n\n"
+    
+    report += """
+### 1.2 Software Composition Analysis (SCA)
+
+"""
+    
+    # Add SCA results
+    for sca_report in scan_reports.get('sca', []):
+        tool = sca_report.get('tool', 'Unknown')
+        data = sca_report.get('data', {})
+        dependencies = data.get('dependencies', [])
+        
+        report += f"""
+#### {tool} Results
+
+- **Dependencies Scanned:** {len(dependencies)}
+- **Report File:** `{sca_report.get('file', 'N/A')}`
+
+"""
+        # Count vulnerabilities
+        vuln_count = 0
+        high_count = 0
+        for dep in dependencies:
+            vulns = dep.get('vulnerabilities', [])
+            vuln_count += len(vulns)
+            high_count += sum(1 for v in vulns if v.get('severity', '').upper() in ['HIGH', 'CRITICAL'])
+        
+        if vuln_count > 0:
+            report += f"""
+**Vulnerabilities Found:**
+
+- 🔴 **High/Critical:** {high_count} vulnerabilities
+- 📊 **Total:** {vuln_count} vulnerabilities
+
+**Top Vulnerable Dependencies:**
+
+"""
+            vuln_deps = [(d, len(d.get('vulnerabilities', []))) for d in dependencies if d.get('vulnerabilities')]
+            vuln_deps.sort(key=lambda x: x[1], reverse=True)
+            
+            for i, (dep, count) in enumerate(vuln_deps[:5], 1):
+                name = dep.get('fileName', 'Unknown')
+                report += f"{i}. **{name}** - {count} vulnerabilities\n"
+                for vuln in dep.get('vulnerabilities', [])[:2]:
+                    cve = vuln.get('name', 'N/A')
+                    severity = vuln.get('severity', 'N/A')
+                    report += f"   - [{severity}] {cve}\n"
+                report += "\n"
+    
+    report += """
+### 1.3 Dynamic Application Security Testing (DAST)
+
+"""
+    
+    # Add DAST results
+    for dast_report in scan_reports.get('dast', []):
+        tool = dast_report.get('tool', 'Unknown')
+        data = dast_report.get('data', {})
+        sites = data.get('site', [])
+        
+        report += f"""
+#### {tool} Results
+
+- **Sites Scanned:** {len(sites)}
+- **Report File:** `{dast_report.get('file', 'N/A')}`
+
+"""
+        for site in sites:
+            alerts = site.get('alerts', [])
+            if alerts:
+                # Group by risk
+                risk_counts = {}
+                for alert in alerts:
+                    risk = alert.get('riskdesc', 'Unknown').split()[0]
+                    risk_counts[risk] = risk_counts.get(risk, 0) + 1
+                
+                report += f"""
+**Target:** {site.get('@name', 'N/A')}
+
+**Alerts by Risk Level:**
+
+"""
+                for risk in ['High', 'Medium', 'Low', 'Informational']:
+                    count = risk_counts.get(risk, 0)
+                    if count > 0:
+                        emoji = '🔴' if risk == 'High' else '🟡' if risk == 'Medium' else '🟢'
+                        report += f"- {emoji} **{risk}:** {count} alerts\n"
+                
+                report += "\n**Top Alerts:**\n\n"
+                for i, alert in enumerate(alerts[:5], 1):
+                    name = alert.get('name', 'N/A')
+                    risk = alert.get('riskdesc', 'Unknown')
+                    report += f"{i}. **[{risk}]** {name}\n"
+                    report += f"   - Count: {alert.get('count', 0)} instances\n"
+                    report += f"   - CWE: {alert.get('cweid', 'N/A')}\n\n"
+
+    report += """
+---
+
+## 2. Introduction & Context
+
+    report += """
+---
+
+## 2. Introduction & Context
+
+### 2.1 Problem Statement
 
 Modern software development relies on DevSecOps pipelines for continuous security integration. However, translating technical vulnerability reports (SAST, SCA, DAST) into actionable, human-readable security policies remains challenging.
 
-### 1.2 Solution Approach
+### 2.2 Solution Approach
 
 This project leverages Large Language Models (LLMs) to automate the translation process, creating dynamic, adaptive, and standards-compliant security documentation.
 
-### 1.3 Technologies Used
+### 2.3 Technologies Used
 
 - **Security Scanning:** Bandit, SonarQube, OWASP Dependency-Check, Safety, OWASP ZAP
 - **LLM Providers:** OpenAI GPT-4, Anthropic Claude, Ollama, DeepSeek, Hugging Face
@@ -95,9 +307,9 @@ This project leverages Large Language Models (LLMs) to automate the translation 
 
 ---
 
-## 2. Architecture & Implementation
+## 3. Architecture & Implementation
 
-### 2.1 System Architecture
+### 3.1 System Architecture
 
 ```
 [Security Scanners] → [Report Parser] → [LLM Engine] → [Policy Generator]
@@ -105,7 +317,7 @@ This project leverages Large Language Models (LLMs) to automate the translation 
                                     [Evaluator] ← [Reference Policies]
 ```
 
-### 2.2 Components
+### 3.2 Components
 
 1. **Scanner Orchestrator:** Coordinates SAST, SCA, and DAST tools
 2. **Report Parser:** Processes and normalizes vulnerability reports
@@ -116,9 +328,9 @@ This project leverages Large Language Models (LLMs) to automate the translation 
 
 ---
 
-## 3. Results & Evaluation
+## 4. AI-Generated Security Policies & Evaluation
 
-### 3.1 Evaluation Metrics
+### 4.1 Evaluation Metrics
 
 """
     
@@ -157,7 +369,7 @@ Measures adherence to framework requirements.
     
     report += """
 
-### 3.2 Generated Policies Overview
+### 4.2 Generated Policies Overview
 
 """
     
@@ -171,23 +383,23 @@ Measures adherence to framework requirements.
 
 ---
 
-## 4. Discussion & Analysis
+## 5. Discussion & Analysis
 
-### 4.1 Strengths
+### 5.1 Strengths
 
 - ✅ **Automation:** Significantly reduces manual policy writing effort
 - ✅ **Consistency:** Ensures standardized policy structure
 - ✅ **Scalability:** Handles large numbers of vulnerabilities efficiently
 - ✅ **Framework Alignment:** Maintains compliance with standards
 
-### 4.2 Limitations
+### 5.2 Limitations
 
 - ⚠️ **LLM Dependency:** Requires API access and associated costs
 - ⚠️ **Context Window:** Limited by LLM token constraints
 - ⚠️ **Hallucination Risk:** LLMs may generate incorrect information
 - ⚠️ **Human Review:** Still requires expert validation
 
-### 4.3 Ethical Considerations
+### 5.3 Ethical Considerations
 
 1. **Privacy:** Vulnerability data should be anonymized
 2. **Accountability:** AI-generated policies need human oversight
@@ -196,16 +408,16 @@ Measures adherence to framework requirements.
 
 ---
 
-## 5. Future Work
+## 6. Future Work
 
-### 5.1 Technical Enhancements
+### 6.1 Technical Enhancements
 
 - [ ] Fine-tune LLMs on security policy corpus
 - [ ] Implement multi-stage refinement pipeline
 - [ ] Add support for more frameworks (PCI-DSS, HIPAA)
 - [ ] Develop real-time policy updates based on new CVEs
 
-### 5.2 Research Directions
+### 6.2 Research Directions
 
 - Comparative study of different LLM architectures
 - Analysis of policy quality vs. LLM model size
@@ -214,7 +426,7 @@ Measures adherence to framework requirements.
 
 ---
 
-## 6. Conclusion
+## 7. Conclusion
 
 This project demonstrates the feasibility and effectiveness of using Large Language Models to automate security policy generation. The system successfully bridges the gap between technical vulnerability detection and organizational governance documentation.
 
