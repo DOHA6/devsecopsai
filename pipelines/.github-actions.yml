@@ -1,299 +1,674 @@
 # GitHub Actions Workflow for DevSecOps AI
 name: DevSecOps AI Pipeline
 
-on:
+## Overview
+
+This document lists ALL API tokens/keys you may need to configure in your DevSecOps AI project.on:
+
   push:
-    branches: [ main, develop ]
+
+---    branches: [ main, develop ]
+
   pull_request:
-    branches: [ main, develop ]
+
+## ✅ Currently Used (Required/Optional)    branches: [ main, develop ]
+
   workflow_dispatch:
 
-env:
+### 1. OWASP ZAP (DAST - Dynamic Security Testing)
+
+**Status**: Optional (only if using DAST scanning)env:
+
   PYTHON_VERSION: '3.9'
 
-jobs:
-  build:
-    name: Build and Test
-    runs-on: ubuntu-latest
+```bash
+
+# In .env file:jobs:
+
+ZAP_API_KEY=your_zap_api_key_here  build:
+
+ZAP_PROXY_ADDRESS=http://localhost:8080    name: Build and Test
+
+```    runs-on: ubuntu-latest
+
     
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0  # Full history for SonarQube
-    
+
+**How to get**:    steps:
+
+1. Install OWASP ZAP: https://www.zaproxy.org/download/    - name: Checkout code
+
+2. Start ZAP      uses: actions/checkout@v4
+
+3. Go to Tools → Options → API      with:
+
+4. Generate API Key        fetch-depth: 0  # Full history for SonarQube
+
+5. Copy and paste into `.env`    
+
     - name: Set up Python
-      uses: actions/setup-python@v4
+
+**When needed**: When running DAST scans with `--scanners dast`      uses: actions/setup-python@v4
+
       with:
-        python-version: ${{ env.PYTHON_VERSION }}
+
+---        python-version: ${{ env.PYTHON_VERSION }}
+
         cache: 'pip'
-    
+
+### 2. LLM Providers (Optional - Only if NOT using Ollama)    
+
     - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
+
+#### OpenAI (GPT-4, GPT-3.5)      run: |
+
+**Status**: Optional (not needed with Ollama/Llama 3.2)        python -m pip install --upgrade pip
+
         pip install -r requirements.txt
+
+```bash    
+
+# In .env file:    - name: Run unit tests
+
+OPENAI_API_KEY=your_openai_api_key_here      run: |
+
+```        pytest tests/unit --cov=. --cov-report=xml --cov-report=html
+
     
-    - name: Run unit tests
-      run: |
-        pytest tests/unit --cov=. --cov-report=xml --cov-report=html
+
+**How to get**:    - name: Upload coverage reports
+
+1. Go to https://platform.openai.com/api-keys      uses: codecov/codecov-action@v3
+
+2. Sign up/Login      with:
+
+3. Click "Create new secret key"        file: ./coverage.xml
+
+4. Copy key (starts with `sk-`)        flags: unittests
+
+5. Paste into `.env`        name: codecov-umbrella
+
     
-    - name: Upload coverage reports
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-    
-    - name: Archive test results
+
+**Cost**: Pay per use (~$0.03 per 1K tokens for GPT-4)    - name: Archive test results
+
       uses: actions/upload-artifact@v3
-      with:
+
+---      with:
+
         name: test-results
-        path: htmlcov/
+
+#### Anthropic Claude        path: htmlcov/
+
+**Status**: Optional (not needed with Ollama/Llama 3.2)
 
   # SonarQube removed - using Bandit for SAST
 
-  sast-bandit:
-    name: SAST - Bandit Security Scanner
-    runs-on: ubuntu-latest
+```bash
+
+# In .env file:  sast-bandit:
+
+ANTHROPIC_API_KEY=your_anthropic_api_key_here    name: SAST - Bandit Security Scanner
+
+```    runs-on: ubuntu-latest
+
     needs: build
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up Python
+
+**How to get**:    
+
+1. Go to https://console.anthropic.com/    steps:
+
+2. Sign up/Login    - name: Checkout code
+
+3. Go to API Keys section      uses: actions/checkout@v4
+
+4. Generate new key    
+
+5. Paste into `.env`    - name: Set up Python
+
       uses: actions/setup-python@v4
-      with:
+
+**Cost**: Pay per use      with:
+
         python-version: ${{ env.PYTHON_VERSION }}
-    
+
+---    
+
     - name: Install Bandit
-      run: pip install bandit[toml]
-    
+
+#### DeepSeek      run: pip install bandit[toml]
+
+**Status**: Optional (not needed with Ollama/Llama 3.2)    
+
     - name: Run Bandit scan
-      run: |
-        mkdir -p data/reports
-        bandit -r . -f json -o data/reports/bandit_report.json || true
-        bandit -r . -f html -o data/reports/bandit_report.html || true
-    
+
+```bash      run: |
+
+# In .env file:        mkdir -p data/reports
+
+DEEPSEEK_API_KEY=your_deepseek_api_key_here        bandit -r . -f json -o data/reports/bandit_report.json || true
+
+DEEPSEEK_BASE_URL=https://api.deepseek.com        bandit -r . -f html -o data/reports/bandit_report.html || true
+
+```    
+
     - name: Upload Bandit results
-      uses: actions/upload-artifact@v3
-      with:
-        name: bandit-reports
-        path: data/reports/bandit_report.*
+
+**How to get**:      uses: actions/upload-artifact@v3
+
+1. Go to https://platform.deepseek.com/      with:
+
+2. Sign up/Login        name: bandit-reports
+
+3. Generate API key        path: data/reports/bandit_report.*
+
+4. Paste into `.env`
 
   sca-dependency-check:
-    name: SCA - OWASP Dependency Check
+
+---    name: SCA - OWASP Dependency Check
+
     runs-on: ubuntu-latest
-    needs: build
-    
+
+#### Hugging Face    needs: build
+
+**Status**: Optional (only for certain models)    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Run OWASP Dependency-Check
+
+```bash    - name: Checkout code
+
+# In .env file:      uses: actions/checkout@v4
+
+HUGGINGFACE_TOKEN=your_huggingface_token_here    
+
+```    - name: Run OWASP Dependency-Check
+
       uses: dependency-check/Dependency-Check_Action@main
-      with:
-        project: 'DevSecOps AI'
-        path: '.'
-        format: 'ALL'
-        out: 'data/reports'
-    
+
+**How to get**:      with:
+
+1. Go to https://huggingface.co/settings/tokens        project: 'DevSecOps AI'
+
+2. Sign up/Login        path: '.'
+
+3. Click "New token"        format: 'ALL'
+
+4. Select "read" access        out: 'data/reports'
+
+5. Copy and paste into `.env`    
+
     - name: Upload Dependency-Check results
-      uses: actions/upload-artifact@v3
+
+**When needed**: Only for gated models (most models don't need this)      uses: actions/upload-artifact@v3
+
       with:
-        name: dependency-check-reports
+
+---        name: dependency-check-reports
+
         path: data/reports/dependency-check-report.*
 
+## 🚫 NOT Required (Tools Work Without API Keys)
+
   sca-safety:
-    name: SCA - Safety Check (Python)
-    runs-on: ubuntu-latest
-    needs: build
-    
-    steps:
+
+### 1. Bandit (SAST)    name: SCA - Safety Check (Python)
+
+**No API key needed** ✅    runs-on: ubuntu-latest
+
+- Runs locally    needs: build
+
+- Python package: `pip install bandit`    
+
+- Usage: `python3 main.py scan --scanners sast`    steps:
+
     - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
+
+### 2. Safety (SCA - Dependency Check)      uses: actions/checkout@v4
+
+**No API key needed** ✅    
+
+- Runs locally    - name: Set up Python
+
+- Python package: `pip install safety`      uses: actions/setup-python@v4
+
+- Usage: Included in SCA scans      with:
+
         python-version: ${{ env.PYTHON_VERSION }}
-    
-    - name: Install Safety
-      run: pip install safety
-    
-    - name: Run Safety check
+
+### 3. OWASP Dependency Check (SCA)    
+
+**No API key needed** ✅    - name: Install Safety
+
+- Runs locally      run: pip install safety
+
+- Download from: https://github.com/jeremylong/DependencyCheck    
+
+- Usage: Included in SCA scans    - name: Run Safety check
+
       run: |
-        mkdir -p data/reports
-        safety check --json --output data/reports/safety_report.json || true
-    
-    - name: Upload Safety results
-      uses: actions/upload-artifact@v3
+
+### 4. Ollama / Llama 3.2 (LLM)        mkdir -p data/reports
+
+**No API key needed** ✅        safety check --json --output data/reports/safety_report.json || true
+
+- Runs locally in Docker    
+
+- Free and open source    - name: Upload Safety results
+
+- Usage: Default LLM provider      uses: actions/upload-artifact@v3
+
       with:
-        name: safety-reports
+
+---        name: safety-reports
+
         path: data/reports/safety_report.json
 
+## 🔧 CI/CD Integration Tokens
+
   dast-zap:
-    name: DAST - OWASP ZAP Scan
-    runs-on: ubuntu-latest
+
+### GitLab CI/CD    name: DAST - OWASP ZAP Scan
+
+**Status**: Required if using GitLab pipelines    runs-on: ubuntu-latest
+
     needs: build
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+```bash    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+# In .env file:    
+
+GITLAB_URL=https://gitlab.com    steps:
+
+GITLAB_TOKEN=your_gitlab_token_here    - name: Checkout code
+
+```      uses: actions/checkout@v4
+
     
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: ZAP Baseline Scan
-      uses: zaproxy/action-baseline@v0.10.0
+
+**How to get**:    - name: ZAP Baseline Scan
+
+1. Go to GitLab → Settings → Access Tokens      uses: zaproxy/action-baseline@v0.10.0
+
+2. Create Personal Access Token      with:
+
+3. Select scopes: `api`, `read_repository`, `write_repository`        target: ${{ secrets.TARGET_URL }}
+
+4. Copy token        rules_file_name: 'pipelines/zap_rules.tsv'
+
+5. Paste into `.env`        cmd_options: '-a -j'
+
+6. Also add to GitLab CI/CD variables:    
+
+   - Go to Project → Settings → CI/CD → Variables    - name: Upload ZAP results
+
+   - Add variable: `GITLAB_TOKEN`      uses: actions/upload-artifact@v3
+
       with:
-        target: ${{ secrets.TARGET_URL }}
-        rules_file_name: 'pipelines/zap_rules.tsv'
-        cmd_options: '-a -j'
-    
-    - name: Upload ZAP results
-      uses: actions/upload-artifact@v3
-      with:
-        name: zap-reports
+
+---        name: zap-reports
+
         path: |
-          report_html.html
-          report_json.json
 
-  policy-generation:
-    name: Generate Security Policies
-    runs-on: ubuntu-latest
-    needs: [sast-bandit, sca-dependency-check, sca-safety]
+### GitHub Actions          report_html.html
+
+**Status**: Required if using GitHub Actions          report_json.json
+
+
+
+```bash  policy-generation:
+
+# In .env file:    name: Generate Security Policies
+
+GITHUB_TOKEN=your_github_token_here    runs-on: ubuntu-latest
+
+```    needs: [sast-bandit, sca-dependency-check, sca-safety]
+
     
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+
+**How to get**:    steps:
+
+1. Go to GitHub → Settings → Developer settings → Personal access tokens    - name: Checkout code
+
+2. Generate new token (classic)      uses: actions/checkout@v4
+
+3. Select scopes: `repo`, `workflow`    
+
+4. Copy token (starts with `ghp_`)    - name: Set up Python
+
+5. Paste into `.env`      uses: actions/setup-python@v4
+
+6. Also add to GitHub Secrets:      with:
+
+   - Go to Repository → Settings → Secrets → Actions        python-version: ${{ env.PYTHON_VERSION }}
+
+   - New repository secret: `GITHUB_TOKEN`        cache: 'pip'
+
     
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
-    
-    - name: Install dependencies
+
+---    - name: Install dependencies
+
       run: pip install -r requirements.txt
-    
-    - name: Download scan results
+
+### Jenkins    
+
+**Status**: Required if using Jenkins    - name: Download scan results
+
       uses: actions/download-artifact@v3
-      with:
-        path: data/reports/
-    
-    - name: Generate NIST CSF policies
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+```bash      with:
+
+# In .env file:        path: data/reports/
+
+JENKINS_URL=http://localhost:8080    
+
+JENKINS_USERNAME=admin    - name: Generate NIST CSF policies
+
+JENKINS_PASSWORD=your_jenkins_password_here      env:
+
+```        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
         LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
-      run: |
-        python main.py generate \
-          --input data/reports/ \
-          --output output/generated_policies/ \
+
+**How to get**:      run: |
+
+1. Jenkins admin credentials        python main.py generate \
+
+2. Or create API token: Jenkins → User → Configure → API Token          --input data/reports/ \
+
+3. Update `.env` with credentials          --output output/generated_policies/ \
+
           --framework NIST_CSF
-    
-    - name: Generate ISO 27001 policies
-      env:
-        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-        LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
-      run: |
-        python main.py generate \
-          --input data/reports/ \
-          --output output/generated_policies/ \
-          --framework ISO_27001
-    
-    - name: Upload generated policies
-      uses: actions/upload-artifact@v3
-      with:
-        name: generated-policies
-        path: output/generated_policies/
 
-  evaluation:
-    name: Evaluate Generated Policies
-    runs-on: ubuntu-latest
+---    
+
+    - name: Generate ISO 27001 policies
+
+## ☁️ Cloud Provider Credentials      env:
+
+        OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+
+### AWS (if using AWS CodePipeline)        LLM_PROVIDER: ${{ secrets.LLM_PROVIDER }}
+
+**Status**: Optional      run: |
+
+        python main.py generate \
+
+```bash          --input data/reports/ \
+
+# In .env file:          --output output/generated_policies/ \
+
+AWS_ACCESS_KEY_ID=your_aws_access_key          --framework ISO_27001
+
+AWS_SECRET_ACCESS_KEY=your_aws_secret_key    
+
+AWS_REGION=us-east-1    - name: Upload generated policies
+
+```      uses: actions/upload-artifact@v3
+
+      with:
+
+**How to get**:        name: generated-policies
+
+1. AWS Console → IAM → Users        path: output/generated_policies/
+
+2. Select user → Security credentials
+
+3. Create access key  evaluation:
+
+4. Download CSV with credentials    name: Evaluate Generated Policies
+
+5. Paste into `.env`    runs-on: ubuntu-latest
+
     needs: policy-generation
-    
+
+---    
+
     steps:
-    - name: Checkout code
+
+## 📋 Summary Table    - name: Checkout code
+
       uses: actions/checkout@v4
+
+| Service | Required? | Purpose | Cost | Setup Difficulty |    
+
+|---------|-----------|---------|------|------------------|    - name: Set up Python
+
+| **Ollama/Llama 3.2** | ✅ Yes (Default) | LLM for policies | Free | Easy (Docker) |      uses: actions/setup-python@v4
+
+| **Bandit** | ✅ Yes | SAST scanning | Free | Easy (pip install) |      with:
+
+| **Safety** | ✅ Yes | SCA scanning | Free | Easy (pip install) |        python-version: ${{ env.PYTHON_VERSION }}
+
+| **Dependency Check** | ✅ Yes | SCA scanning | Free | Medium (download) |        cache: 'pip'
+
+| **ZAP API Key** | ⚠️ Optional | DAST scanning | Free | Medium |    
+
+| **OpenAI API** | ❌ Optional | Alternative LLM | Paid | Easy |    - name: Install dependencies
+
+| **Anthropic API** | ❌ Optional | Alternative LLM | Paid | Easy |      run: pip install -r requirements.txt
+
+| **DeepSeek API** | ❌ Optional | Alternative LLM | Paid | Easy |    
+
+| **Hugging Face** | ❌ Optional | Some models | Free | Easy |    - name: Download generated policies
+
+| **GitLab Token** | ⚠️ If using GitLab | CI/CD | Free | Easy |      uses: actions/download-artifact@v3
+
+| **GitHub Token** | ⚠️ If using GitHub | CI/CD | Free | Easy |      with:
+
+| **Jenkins** | ⚠️ If using Jenkins | CI/CD | Free | Medium |        name: generated-policies
+
+| **AWS Credentials** | ❌ Optional | AWS integration | Paid | Medium |        path: output/generated_policies/
+
     
-    - name: Set up Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
-    
-    - name: Install dependencies
-      run: pip install -r requirements.txt
-    
-    - name: Download generated policies
-      uses: actions/download-artifact@v3
-      with:
-        name: generated-policies
-        path: output/generated_policies/
-    
-    - name: Run evaluation
+
+---    - name: Run evaluation
+
       run: |
-        python main.py evaluate \
+
+## 🎯 Quick Setup Guide        python main.py evaluate \
+
           --policies output/generated_policies/ \
-          --reference data/reference_policies/ \
-          --output output/evaluation_results/
+
+### Minimal Setup (No API keys needed!)          --reference data/reference_policies/ \
+
+```bash          --output output/evaluation_results/
+
+# 1. Use Ollama (default)    
+
+LLM_PROVIDER=ollama    - name: Display evaluation summary
+
+LLM_MODEL=llama3.2:3b      run: cat output/evaluation_results/summary.json
+
     
-    - name: Display evaluation summary
-      run: cat output/evaluation_results/summary.json
-    
-    - name: Upload evaluation results
-      uses: actions/upload-artifact@v3
+
+# 2. Run scans (no API keys)    - name: Upload evaluation results
+
+python3 main.py scan --target ./sample_app --scanners sast,sca      uses: actions/upload-artifact@v3
+
       with:
-        name: evaluation-results
-        path: output/evaluation_results/
+
+# 3. Generate policies        name: evaluation-results
+
+python3 main.py generate --input ./data/reports        path: output/evaluation_results/
+
+```
 
   generate-report:
-    name: Generate Final Report
+
+✅ **This works with ZERO API keys!**    name: Generate Final Report
+
     runs-on: ubuntu-latest
-    needs: evaluation
+
+---    needs: evaluation
+
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+### If You Want DAST (ZAP)    
+
+```bash    steps:
+
+# 1. Install ZAP    - name: Checkout code
+
+# Download from: https://www.zaproxy.org/download/      uses: actions/checkout@v4
+
     
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-    
-    - name: Set up Python
+
+# 2. Get API key from ZAP UI    - name: Set up Python
+
       uses: actions/setup-python@v4
-      with:
-        python-version: ${{ env.PYTHON_VERSION }}
-        cache: 'pip'
+
+# 3. Add to .env      with:
+
+ZAP_API_KEY=your_actual_key_here        python-version: ${{ env.PYTHON_VERSION }}
+
+ZAP_PROXY_ADDRESS=http://localhost:8080        cache: 'pip'
+
     
-    - name: Install dependencies
-      run: pip install -r requirements.txt
-    
+
+# 4. Run with DAST    - name: Install dependencies
+
+python3 main.py scan --target http://localhost:3000 --scanners dast      run: pip install -r requirements.txt
+
+```    
+
     - name: Download evaluation results
-      uses: actions/download-artifact@v3
+
+---      uses: actions/download-artifact@v3
+
       with:
-        name: evaluation-results
-        path: output/evaluation_results/
-    
-    - name: Download generated policies
-      uses: actions/download-artifact@v3
-      with:
+
+### If You Want Cloud LLM        name: evaluation-results
+
+```bash        path: output/evaluation_results/
+
+# Option A: OpenAI    
+
+OPENAI_API_KEY=sk-...    - name: Download generated policies
+
+LLM_PROVIDER=openai      uses: actions/download-artifact@v3
+
+LLM_MODEL=gpt-4      with:
+
         name: generated-policies
-        path: output/generated_policies/
-    
-    - name: Generate final report
-      run: |
-        python scripts/generate_final_report.py \
+
+# Option B: Anthropic        path: output/generated_policies/
+
+ANTHROPIC_API_KEY=sk-ant-...    
+
+LLM_PROVIDER=anthropic    - name: Generate final report
+
+LLM_MODEL=claude-3-opus-20240229      run: |
+
+```        python scripts/generate_final_report.py \
+
           --evaluation output/evaluation_results/ \
-          --policies output/generated_policies/ \
+
+---          --policies output/generated_policies/ \
+
           --output reports/final_report.pdf
-    
+
+## 🔒 Security Best Practices    
+
     - name: Upload final report
-      uses: actions/upload-artifact@v3
-      with:
-        name: final-report
-        path: reports/final_report.pdf
-    
+
+1. **Never commit `.env` file to git**      uses: actions/upload-artifact@v3
+
+   ```bash      with:
+
+   # Already in .gitignore        name: final-report
+
+   echo ".env" >> .gitignore        path: reports/final_report.pdf
+
+   ```    
+
     - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: softprops/action-gh-release@v1
-      with:
-        files: reports/final_report.pdf
+
+2. **Use CI/CD secrets for pipelines**      if: startsWith(github.ref, 'refs/tags/')
+
+   - GitLab: Project Settings → CI/CD → Variables      uses: softprops/action-gh-release@v1
+
+   - GitHub: Repository Settings → Secrets → Actions      with:
+
+   - Jenkins: Credentials management        files: reports/final_report.pdf
+
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+3. **Rotate tokens regularly**        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+   - Every 90 days minimum
+   - Immediately if compromised
+
+4. **Use least privilege**
+   - Only grant necessary permissions
+   - Use read-only tokens when possible
+
+5. **Monitor token usage**
+   - Check for unusual activity
+   - Set up billing alerts (for paid APIs)
+
+---
+
+## 🆘 Troubleshooting
+
+### "API key not set" error
+```bash
+# Check if variable is loaded
+python3 -c "import os; from dotenv import load_dotenv; load_dotenv(); print(os.getenv('ZAP_API_KEY'))"
+
+# Should print your key, not None
+```
+
+### ZAP connection failed
+```bash
+# Make sure ZAP is running
+curl http://localhost:8080
+
+# Check ZAP proxy is accessible
+```
+
+### OpenAI/Anthropic rate limits
+```bash
+# Switch to Ollama (unlimited, free)
+export LLM_PROVIDER=ollama
+export LLM_MODEL=llama3.2:3b
+```
+
+---
+
+## 📞 Where to Get Help
+
+1. **ZAP**: https://www.zaproxy.org/docs/
+2. **OpenAI**: https://platform.openai.com/docs
+3. **Anthropic**: https://docs.anthropic.com/
+4. **Ollama**: https://ollama.ai/docs
+5. **Project Issues**: Check repository documentation
+
+---
+
+## ✅ Verification Checklist
+
+Use this to verify your setup:
+
+```bash
+# Run the check
+python3 main.py check-config
+
+# Should show:
+# ✅ LLM Provider: ollama (no key needed)
+# ✅ Bandit: Built-in (no key needed)
+# ⚠️ ZAP: Not configured (optional)
+```
+
+---
+
+## 🎉 Recommended Setup (Best for Beginners)
+
+**You only need**:
+1. ✅ Ollama (already configured)
+2. ✅ Bandit (pip installed)
+3. ✅ Safety (pip installed)
+4. ✅ Dependency Check (download once)
+
+**No API keys needed!** 🎊
+
+Everything else is optional for advanced features.

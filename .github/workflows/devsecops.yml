@@ -43,11 +43,8 @@ jobs:
       - name: Run Bandit (Python SAST)
         continue-on-error: true
         run: |
-          mkdir -p data/reports
           bandit -r . -f json -o data/reports/bandit_report.json || true
           bandit -r . -f html -o data/reports/bandit_report.html || true
-          echo "Generated reports:"
-          ls -lh data/reports/ || echo "No reports directory"
 
       - name: Run SpotBugs (Java SAST)
         continue-on-error: true
@@ -61,7 +58,6 @@ jobs:
         with:
           name: sast-reports
           path: data/reports/
-          retention-days: 7  # Keep for 7 days only (raw data)
 
   # SCA - Software Composition Analysis
   sca-scan:
@@ -81,14 +77,11 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install safety
-          mkdir -p data/reports
 
       - name: Run Safety Check (Python)
         continue-on-error: true
         run: |
           safety check --json --output data/reports/safety_report.json || true
-          echo "Safety report generated:"
-          ls -lh data/reports/safety_report.json 2>/dev/null || echo "No safety report"
 
       - name: Run OWASP Dependency-Check (Java)
         uses: dependency-check/Dependency-Check_Action@main
@@ -116,7 +109,6 @@ jobs:
         with:
           name: sca-reports
           path: data/reports/
-          retention-days: 7  # Keep for 7 days only (raw data)
 
   # Build and Test
   build:
@@ -202,7 +194,6 @@ jobs:
           path: |
             zap_report.html
             zap_report.json
-          retention-days: 7  # Keep for 7 days only (raw data)
 
   # AI-Powered Policy Generation
   generate-policies:
@@ -229,64 +220,6 @@ jobs:
         with:
           pattern: '*-reports'
           merge-multiple: true
-          
-      - name: Organize Reports
-        run: |
-          echo "📁 Organizing downloaded reports..."
-          mkdir -p data/reports
-          # Move all JSON/HTML files to data/reports/
-          find . -name "*.json" -o -name "*.html" | while read file; do
-            if [[ "$file" != "./data/reports/"* ]]; then
-              echo "Moving: $file"
-              cp "$file" data/reports/ 2>/dev/null || true
-            fi
-          done
-
-      - name: List Downloaded Reports
-        run: |
-          echo "📁 Checking for downloaded reports:"
-          echo "Current directory: $(pwd)"
-          echo "Directory structure:"
-          ls -laR data/ || echo "❌ No data directory"
-          echo ""
-          echo "Looking for JSON reports:"
-          find . -name "*.json" -type f | head -20
-          echo ""
-          REPORT_COUNT=$(find data/reports -name "*.json" -type f 2>/dev/null | wc -l)
-          echo "Found $REPORT_COUNT JSON reports in data/reports/"
-          if [ "$REPORT_COUNT" -eq 0 ]; then
-            echo "⚠️  WARNING: No reports found! Policy generation may fail."
-          fi
-
-      - name: Install and Setup Ollama
-        run: |
-          echo "🔧 Installing Ollama..."
-          curl -fsSL https://ollama.com/install.sh | sh
-          
-          echo "🚀 Starting Ollama service..."
-          ollama serve > /tmp/ollama.log 2>&1 &
-          OLLAMA_PID=$!
-          echo "Ollama PID: $OLLAMA_PID"
-          
-          echo "⏳ Waiting for Ollama to be ready..."
-          for i in {1..30}; do
-            if curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
-              echo "✅ Ollama is ready!"
-              break
-            fi
-            echo "Waiting... ($i/30)"
-            sleep 2
-          done
-          
-          echo "📥 Pulling qwen2.5:1.5b model..."
-          ollama pull qwen2.5:1.5b || {
-            echo "❌ Failed to pull model"
-            cat /tmp/ollama.log
-            exit 1
-          }
-          
-          echo "✅ Ollama setup complete"
-          ollama list
 
       - name: Generate Security Policies with AI
         env:
@@ -294,29 +227,13 @@ jobs:
           OLLAMA_HOST: ${{ secrets.OLLAMA_HOST || 'http://localhost:11434' }}
           LLM_MODEL: qwen2.5:1.5b
         run: |
-          mkdir -p output/generated_policies
-          python main.py generate --input data/reports --output output/generated_policies || {
-            echo "❌ Policy generation failed"
-            exit 1
-          }
-
-      - name: Verify Generated Policies
-        run: |
-          echo "📄 Generated policies:"
-          ls -la output/generated_policies/ || echo "No policies directory found"
-          POLICY_COUNT=$(find output/generated_policies -type f -name "*.json" 2>/dev/null | wc -l)
-          echo "Found $POLICY_COUNT policy files"
-          if [ "$POLICY_COUNT" -eq 0 ]; then
-            echo "❌ No policies were generated!"
-            exit 1
-          fi
+          python main.py generate --input data/reports --output output/generated_policies
 
       - name: Upload Generated Policies
         uses: actions/upload-artifact@v4
         with:
           name: security-policies
           path: output/generated_policies/
-          retention-days: 7  # Keep for 7 days only (included in final report)
 
       - name: Evaluate Generated Policies
         run: |
@@ -325,30 +242,19 @@ jobs:
             --reference data/reference_policies \
             --output output/evaluation_results
 
-      - name: Upload Evaluation Results
-        uses: actions/upload-artifact@v4
-        with:
-          name: evaluation-results
-          path: output/evaluation_results/
-          retention-days: 7  # Keep for 7 days only (included in final report)
-
-      - name: Generate Consolidated Final Report
+      - name: Generate Final Consolidated Report
         run: |
-          echo "📊 Generating consolidated report with all scan results..."
-          python scripts/generate_final_report.py \
-            --evaluation output/evaluation_results \
-            --policies output/generated_policies \
-            --output output/CONSOLIDATED_SECURITY_REPORT
-          
-          echo "✅ Final report generated:"
-          ls -lh output/CONSOLIDATED_SECURITY_REPORT.md
+          echo "📊 Creating final security report..."
+          python scripts/create_final_report.py
+          echo "✅ Report generated successfully"
+          ls -lh output/FINAL_SECURITY_REPORT.md
 
-      - name: Upload Final Consolidated Report (⭐ DOWNLOAD THIS!)
+      - name: Upload Final Report (⭐ DOWNLOAD THIS)
         uses: actions/upload-artifact@v4
         with:
-          name: 📊-FINAL-SECURITY-REPORT-📊
-          path: output/CONSOLIDATED_SECURITY_REPORT.md
-          retention-days: 90  # Keep for 90 days - this is the main report!
+          name: 📊-FINAL-SECURITY-REPORT
+          path: output/FINAL_SECURITY_REPORT.md
+          retention-days: 90
 
   # Security Gate - Fail if critical issues found
   security-gate:

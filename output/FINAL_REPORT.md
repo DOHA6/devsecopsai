@@ -1,66 +1,6 @@
-"""
-Report Generation Script
-Creates comprehensive PDF/HTML reports from evaluation results
-"""
+# DevSecOps AI - Final Project Report
 
-import json
-import argparse
-from pathlib import Path
-from datetime import datetime
-import sys
-
-# Add parent directory to path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
-
-def generate_report(evaluation_dir: str, policies_dir: str, output_file: str):
-    """Generate final project report"""
-    
-    evaluation_dir = Path(evaluation_dir)
-    policies_dir = Path(policies_dir)
-    output_file = Path(output_file)
-    
-    # Load evaluation results
-    summary_file = evaluation_dir / 'summary.json'
-    if not summary_file.exists():
-        print(f"Error: Evaluation summary not found: {summary_file}")
-        sys.exit(1)
-    
-    with open(summary_file, 'r') as f:
-        evaluation = json.load(f)
-    
-    # Load generated policies
-    policies = []
-    for policy_file in policies_dir.glob('*.json'):
-        with open(policy_file, 'r') as f:
-            policies.append(json.load(f))
-    
-    # Generate Markdown report
-    report_md = generate_markdown_report(evaluation, policies)
-    
-    # Save Markdown
-    md_file = output_file.with_suffix('.md')
-    with open(md_file, 'w') as f:
-        f.write(report_md)
-    
-    print(f"✅ Report generated: {md_file}")
-    
-    # Try to generate PDF if fpdf2 is available
-    try:
-        from fpdf import FPDF
-        generate_pdf_report(report_md, output_file)
-        print(f"✅ PDF report generated: {output_file}")
-    except ImportError:
-        print("⚠️  fpdf2 not installed. PDF generation skipped.")
-        print("   Install with: pip install fpdf2")
-
-
-def generate_markdown_report(evaluation: dict, policies: list) -> str:
-    """Generate Markdown report content"""
-    
-    report = f"""# DevSecOps AI - Final Project Report
-
-**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+**Generated:** 2025-11-07 10:54:03
 
 ---
 
@@ -70,8 +10,8 @@ This report presents the results of an AI-driven security policy generation syst
 
 ### Key Achievements
 
-- **Policies Generated:** {len(policies)}
-- **Vulnerabilities Addressed:** {evaluation.get('generated_count', 0)}
+- **Policies Generated:** 10
+- **Vulnerabilities Addressed:** 10
 - **Frameworks Covered:** NIST CSF, ISO 27001, CIS Controls
 
 ---
@@ -120,54 +60,33 @@ This project leverages Large Language Models (LLMs) to automate the translation 
 
 ### 3.1 Evaluation Metrics
 
-"""
-    
-    # Add metrics
-    metrics = evaluation.get('metrics', {})
-    
-    if 'BLEU' in metrics:
-        bleu = metrics['BLEU']
-        report += f"""
-#### BLEU Score: {bleu:.4f}
+
+#### BLEU Score: 0.0000
 
 Measures n-gram overlap with reference policies.
-- Score: {bleu:.2%}
-- Interpretation: {'Excellent' if bleu >= 0.5 else 'Good' if bleu >= 0.3 else 'Needs Improvement'}
-"""
-    
-    if 'ROUGE-L' in metrics:
-        rouge = metrics['ROUGE-L']
-        report += f"""
-#### ROUGE-L Score: {rouge:.4f}
+- Score: 0.00%
+- Interpretation: Needs Improvement
+
+#### ROUGE-L Score: 0.1136
 
 Evaluates longest common subsequence with references.
-- Score: {rouge:.2%}
-- Interpretation: {'Strong' if rouge >= 0.5 else 'Moderate' if rouge >= 0.3 else 'Limited'} content overlap
-"""
-    
-    if 'COMPLIANCE' in metrics:
-        compliance = metrics['COMPLIANCE']
-        report += f"""
-#### Compliance Score: {compliance:.4f}
+- Score: 11.36%
+- Interpretation: Limited content overlap
 
-Measures adherence to framework requirements.
-- Score: {compliance:.2%}
-- Interpretation: {'Excellent' if compliance >= 0.8 else 'Good' if compliance >= 0.6 else 'Insufficient'} framework coverage
-"""
-    
-    report += """
 
 ### 3.2 Generated Policies Overview
 
-"""
-    
-    # Add policy details
-    for i, policy in enumerate(policies, 1):
-        framework = policy.get('framework', 'Unknown')
-        vuln_count = policy.get('vulnerability_count', 0)
-        report += f"{i}. **{framework}** - Addresses {vuln_count} vulnerabilities\n"
-    
-    report += """
+1. **NIST_CSF** - Addresses 6 vulnerabilities
+2. **CIS_CONTROLS** - Addresses 8 vulnerabilities
+3. **NIST_CSF** - Addresses 8 vulnerabilities
+4. **NIST_CSF** - Addresses 7 vulnerabilities
+5. **NIST_CSF** - Addresses 6 vulnerabilities
+6. **CIS_CONTROLS** - Addresses 2 vulnerabilities
+7. **NIST_CSF** - Addresses 2 vulnerabilities
+8. **NIST_CSF** - Addresses 2 vulnerabilities
+9. **NIST_CSF** - Addresses 15 vulnerabilities
+10. **NIST_CSF** - Addresses 8 vulnerabilities
+
 
 ---
 
@@ -254,24 +173,3 @@ All generated policies available in `output/generated_policies/`
 ---
 
 **End of Report**
-"""
-    
-    return report
-
-
-def generate_pdf_report(markdown_text: str, output_file: Path):
-    """Convert Markdown report to PDF"""
-    # This is a simplified PDF generation
-    # For better results, use a Markdown to PDF converter like pandoc
-    pass
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Generate final project report')
-    parser.add_argument('--evaluation', required=True, help='Evaluation results directory')
-    parser.add_argument('--policies', required=True, help='Generated policies directory')
-    parser.add_argument('--output', required=True, help='Output report file')
-    
-    args = parser.parse_args()
-    
-    generate_report(args.evaluation, args.policies, args.output)

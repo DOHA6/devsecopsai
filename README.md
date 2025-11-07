@@ -100,290 +100,51 @@ You'll see:
 
 ## 🏗️ Project Architecture
 
-```mermaid
-flowchart TD
-    A[Spring Boot + React App<br/>Port 8080 & 3000] --> B{Security Scanners}
-    
-    B --> C1[SAST<br/>Bandit, SpotBugs]
-    B --> C2[SCA<br/>OWASP Dep-Check<br/>Safety, npm audit]
-    B --> C3[DAST<br/>OWASP ZAP]
-    
-    C1 --> D[Vulnerability Reports<br/>data/reports/*.json]
-    C2 --> D
-    C3 --> D
-    
-    D --> E[Report Parser<br/>parsers/report_parser.py]
-    
-    E --> F[Parsed Vulnerabilities<br/>Normalized Data]
-    
-    F --> G[AI Policy Generator<br/>Ollama + Qwen 2.5:1.5b]
-    
-    G --> H{Policy Frameworks}
-    
-    H --> I1[NIST CSF]
-    H --> I2[CIS Controls]
-    H --> I3[ISO 27001]
-    
-    I1 --> J[Generated Policies<br/>output/generated_policies/]
-    I2 --> J
-    I3 --> J
-    
-    J --> K[Policy Evaluator<br/>BLEU, ROUGE-L Metrics]
-    
-    K --> L[Flask Dashboard<br/>Port 5000]
-    
-    L --> M[Visualization<br/>• Vulnerabilities<br/>• Policies<br/>• Metrics<br/>• Recommendations]
-    
-    style A fill:#e1f5ff
-    style B fill:#fff4e1
-    style D fill:#ffe1e1
-    style G fill:#e1ffe1
-    style J fill:#f0e1ff
-    style L fill:#ffe1f0
 ```
-
-## 📊 Complete Workflow Diagram
-
-```mermaid
-graph LR
-    subgraph "1. Development"
-        A[Developer writes code] --> B[Push to GitHub]
-    end
-    
-    subgraph "2. CI/CD Pipeline"
-        B --> C[GitHub Actions Trigger]
-        C --> D1[SAST Scan Job]
-        C --> D2[SCA Scan Job]
-        D1 --> E[Build Job]
-        D2 --> E
-        E --> F[DAST Scan Job]
-        F --> G[Policy Generation Job]
-        G --> H[Security Gate Job]
-    end
-    
-    subgraph "3. Local Development"
-        I[Run Scans Locally] --> J[Generate Reports]
-        J --> K[AI Policy Generation]
-        K --> L[View Dashboard]
-    end
-    
-    subgraph "4. Security Analysis"
-        M[Vulnerability Detection] --> N[Policy Creation]
-        N --> O[Compliance Mapping]
-        O --> P[Recommendations]
-    end
-    
-    H --> Q{Critical Issues?}
-    Q -->|Yes| R[❌ Fail Build]
-    Q -->|No| S[✅ Deploy]
-    
-    L --> T[Review & Fix]
-    T --> A
-    
-    style C fill:#90EE90
-    style H fill:#FFD700
-    style R fill:#FF6B6B
-    style S fill:#4ECDC4
-```
-
-## 🔄 CI/CD Pipeline Flow
-
-```mermaid
-sequenceDiagram
-    participant Dev as Developer
-    participant GH as GitHub
-    participant GA as GitHub Actions
-    participant SAST as SAST Scanner
-    participant SCA as SCA Scanner
-    participant Build as Build System
-    participant DAST as DAST Scanner
-    participant AI as AI Policy Gen
-    participant Gate as Security Gate
-    
-    Dev->>GH: git push origin main
-    GH->>GA: Trigger Workflow
-    
-    par Parallel Security Scans
-        GA->>SAST: Run Bandit, SpotBugs
-        SAST-->>GA: Code vulnerabilities
-        GA->>SCA: Run Dep-Check, Safety
-        SCA-->>GA: Dependency issues
-    end
-    
-    GA->>Build: Compile Spring Boot + React
-    Build-->>GA: Build artifacts
-    
-    GA->>DAST: Start app & run ZAP
-    DAST-->>GA: Runtime vulnerabilities
-    
-    GA->>AI: Generate policies from reports
-    AI-->>GA: Security policies (NIST, CIS, ISO)
-    
-    GA->>Gate: Check security thresholds
-    
-    alt Critical vulnerabilities found
-        Gate-->>GH: ❌ Fail pipeline
-        GH-->>Dev: Notification: Fix required
-    else No critical issues
-        Gate-->>GH: ✅ Pass pipeline
-        GH-->>Dev: Notification: Success
-    end
-```
-
-## 🎯 Data Flow Architecture
-
-```mermaid
-flowchart LR
-    subgraph Input
-        A1[Source Code] --> B[Scanner<br/>Orchestrator]
-        A2[Dependencies] --> B
-        A3[Running App] --> B
-    end
-    
-    subgraph Scanning
-        B --> C1[Bandit]
-        B --> C2[SpotBugs]
-        B --> C3[Safety]
-        B --> C4[OWASP DC]
-        B --> C5[npm audit]
-        B --> C6[ZAP]
-    end
-    
-    subgraph Processing
-        C1 --> D[Report Parser]
-        C2 --> D
-        C3 --> D
-        C4 --> D
-        C5 --> D
-        C6 --> D
-        
-        D --> E[Vulnerability<br/>Normalizer]
-        E --> F[Data<br/>Aggregator]
-    end
-    
-    subgraph AI Generation
-        F --> G[Prompt<br/>Engine]
-        G --> H[LLM<br/>Ollama/Qwen]
-        H --> I[Policy<br/>Formatter]
-    end
-    
-    subgraph Output
-        I --> J1[JSON Policies]
-        I --> J2[Markdown Reports]
-        I --> J3[Dashboard Data]
-    end
-    
-    style B fill:#FFE5B4
-    style D fill:#B4D7FF
-    style H fill:#B4FFB4
-    style J1 fill:#FFB4E5
-```
-
-## 🗂️ Component Interaction
-
-```mermaid
-classDiagram
-    class ScannerOrchestrator {
-        +run_scans()
-        +execute_sast()
-        +execute_sca()
-        +execute_dast()
-    }
-    
-    class ReportParser {
-        +parse_directory()
-        +parse_bandit()
-        +parse_dependency_check()
-        +parse_zap()
-        +normalize_data()
-    }
-    
-    class LLMManager {
-        +generate()
-        +call_ollama()
-        +cache_response()
-        +validate_output()
-    }
-    
-    class PolicyOrchestrator {
-        +generate_policies()
-        +map_to_framework()
-        +create_nist_policy()
-        +create_cis_policy()
-        +create_iso_policy()
-    }
-    
-    class PolicyEvaluator {
-        +evaluate()
-        +calculate_bleu()
-        +calculate_rouge()
-        +generate_metrics()
-    }
-    
-    class DashboardApp {
-        +api_status()
-        +api_metrics()
-        +api_vulnerabilities()
-        +api_policies()
-    }
-    
-    ScannerOrchestrator --> ReportParser : generates reports
-    ReportParser --> PolicyOrchestrator : parsed data
-    PolicyOrchestrator --> LLMManager : uses
-    PolicyOrchestrator --> PolicyEvaluator : evaluates
-    PolicyEvaluator --> DashboardApp : displays
-```
-
-## 🚀 Deployment Architecture
-
-```mermaid
-graph TB
-    subgraph "GitHub Repository"
-        A[Source Code] --> B[.github/workflows/]
-    end
-    
-    subgraph "GitHub Actions Runner"
-        B --> C[Ubuntu Latest]
-        C --> D[Python 3.9]
-        C --> E[Java 11]
-        C --> F[Node 14]
-        
-        D --> G[Install Dependencies]
-        E --> G
-        F --> G
-        
-        G --> H[Run Security Scans]
-        H --> I[Build Applications]
-        I --> J[Generate Policies]
-        J --> K[Upload Artifacts]
-    end
-    
-    subgraph "Local Development"
-        L[Developer Machine] --> M[Ollama Server]
-        M --> N[Qwen 2.5:1.5b]
-        L --> O[Flask Dashboard]
-        L --> P[Spring Boot App]
-        L --> Q[React App]
-    end
-    
-    subgraph "Artifacts Storage"
-        K --> R[SAST Reports]
-        K --> S[SCA Reports]
-        K --> T[DAST Reports]
-        K --> U[Generated Policies]
-        K --> V[Dashboard Reports]
-    end
-    
-    R --> W[90 Days Retention]
-    S --> W
-    T --> W
-    U --> W
-    V --> W
-    
-    style B fill:#FF6B6B
-    style C fill:#4ECDC4
-    style M fill:#95E1D3
-    style K fill:#F38181
+┌─────────────────────────────────────────────────────────┐
+│              Spring Boot + React Application             │
+│         (Intentionally Vulnerable for Testing)           │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│                  Security Scanners                       │
+├─────────────────────────────────────────────────────────┤
+│  SAST: Bandit, SpotBugs (code analysis)                 │
+│  SCA:  Safety, OWASP Dependency-Check, npm audit        │
+│  DAST: OWASP ZAP (runtime testing)                      │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│              Vulnerability Reports (JSON)                │
+│         data/reports/*.json                              │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│              Report Parser & Normalizer                  │
+│         parsers/report_parser.py                         │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│           AI Policy Generator (Ollama)                   │
+├─────────────────────────────────────────────────────────┤
+│  Model: qwen2.5:1.5b (local, private)                   │
+│  Frameworks: NIST CSF, CIS Controls, ISO 27001          │
+│  Output: Actionable security policies                   │
+└────────────────────┬────────────────────────────────────┘
+                     │
+                     ▼
+┌─────────────────────────────────────────────────────────┐
+│              Flask Dashboard (Port 5000)                 │
+├─────────────────────────────────────────────────────────┤
+│  • Vulnerability overview                                │
+│  • Generated policies                                    │
+│  • Quality metrics (BLEU, ROUGE-L)                       │
+│  • Real-time updates                                     │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ---
