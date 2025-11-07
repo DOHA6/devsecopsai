@@ -219,7 +219,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: '*-reports'
+          path: data/reports
           merge-multiple: true
+
+      - name: List Downloaded Reports
+        run: |
+          echo "📁 Downloaded reports:"
+          ls -la data/reports/ || echo "No reports directory found"
+          find data/reports -type f -name "*.json" 2>/dev/null || echo "No JSON reports found"
 
       - name: Generate Security Policies with AI
         env:
@@ -228,6 +235,12 @@ jobs:
           LLM_MODEL: qwen2.5:1.5b
         run: |
           python main.py generate --input data/reports --output output/generated_policies
+
+      - name: Verify Generated Policies
+        run: |
+          echo "📄 Generated policies:"
+          ls -la output/generated_policies/ || echo "No policies directory found"
+          find output/generated_policies -type f -name "*.json" 2>/dev/null || echo "No policy files found"
 
       - name: Upload Generated Policies
         uses: actions/upload-artifact@v4
