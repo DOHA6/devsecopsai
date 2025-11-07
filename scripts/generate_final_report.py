@@ -285,11 +285,6 @@ This report presents comprehensive security analysis results including vulnerabi
 
 ## 2. Introduction & Context
 
-    report += """
----
-
-## 2. Introduction & Context
-
 ### 2.1 Problem Statement
 
 Modern software development relies on DevSecOps pipelines for continuous security integration. However, translating technical vulnerability reports (SAST, SCA, DAST) into actionable, human-readable security policies remains challenging.
