@@ -255,6 +255,36 @@ jobs:
             echo "⚠️  WARNING: No reports found! Policy generation may fail."
           fi
 
+      - name: Install and Setup Ollama
+        run: |
+          echo "🔧 Installing Ollama..."
+          curl -fsSL https://ollama.com/install.sh | sh
+          
+          echo "🚀 Starting Ollama service..."
+          ollama serve > /tmp/ollama.log 2>&1 &
+          OLLAMA_PID=$!
+          echo "Ollama PID: $OLLAMA_PID"
+          
+          echo "⏳ Waiting for Ollama to be ready..."
+          for i in {1..30}; do
+            if curl -s http://localhost:11434/api/tags >/dev/null 2>&1; then
+              echo "✅ Ollama is ready!"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          
+          echo "📥 Pulling qwen2.5:1.5b model..."
+          ollama pull qwen2.5:1.5b || {
+            echo "❌ Failed to pull model"
+            cat /tmp/ollama.log
+            exit 1
+          }
+          
+          echo "✅ Ollama setup complete"
+          ollama list
+
       - name: Generate Security Policies with AI
         env:
           LLM_PROVIDER: ollama
