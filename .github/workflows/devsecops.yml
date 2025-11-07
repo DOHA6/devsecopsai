@@ -234,13 +234,22 @@ jobs:
           OLLAMA_HOST: ${{ secrets.OLLAMA_HOST || 'http://localhost:11434' }}
           LLM_MODEL: qwen2.5:1.5b
         run: |
-          python main.py generate --input data/reports --output output/generated_policies
+          mkdir -p output/generated_policies
+          python main.py generate --input data/reports --output output/generated_policies || {
+            echo "❌ Policy generation failed"
+            exit 1
+          }
 
       - name: Verify Generated Policies
         run: |
           echo "📄 Generated policies:"
           ls -la output/generated_policies/ || echo "No policies directory found"
-          find output/generated_policies -type f -name "*.json" 2>/dev/null || echo "No policy files found"
+          POLICY_COUNT=$(find output/generated_policies -type f -name "*.json" 2>/dev/null | wc -l)
+          echo "Found $POLICY_COUNT policy files"
+          if [ "$POLICY_COUNT" -eq 0 ]; then
+            echo "❌ No policies were generated!"
+            exit 1
+          fi
 
       - name: Upload Generated Policies
         uses: actions/upload-artifact@v4
